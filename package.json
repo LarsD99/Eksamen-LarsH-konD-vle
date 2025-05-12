@@ -1,0 +1,24 @@
+{
+  "name": "eksamen-larshakondovle",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LarsD99/Eksamen-LarsH-konD-vle.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/LarsD99/Eksamen-LarsH-konD-vle/issues"
+  },
+  "homepage": "https://github.com/LarsD99/Eksamen-LarsH-konD-vle#readme",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
