@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DatingApp</title>
+    <script defer src="js/datingApp.js"></script>
+  </head>
+  <body>
+    <h2>Welcome to DatingApp!</h2>
+
+    <!-- brukerens navn og mulighet til å endre det -->
+    <section>
+      <h3>Your profile</h3>
+      <p>Username: <span id="profileUsername"></span></p>
+      <label for="editUserName">Edit username:</label>
+      <input type="text" id="editUserName" />
+      <button id="saveChangesBtn">Save</button>
+    </section>
+
+    <!-- tilfelige matcher -->
+    <section>
+      <h3>Match suggestions</h3>
+      <div id="randomUsersContainer"></div>
+    </section>
+  </body>
+</html>
