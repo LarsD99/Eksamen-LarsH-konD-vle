@@ -6,14 +6,26 @@ if (!user || !user._id) {
   window.location.href = "login.html";
 }
 
+// Visning og redigering av brukerprofil
 const profileUsername = document.getElementById("profileUsername");
 const editUsername = document.getElementById("editUserName");
 const saveBtn = document.getElementById("saveChangesBtn");
 const userList = document.getElementById("randomUsersContainer");
 
+// Filtrering
+const genderFilter = document.getElementById("genderFilter");
+const ageInput = document.getElementById("ageInput");
+const applyFilterBtn = document.getElementById("applyFilterBtn");
+
+// brukernavn
 profileUsername.textContent = user.username;
 editUsername.value = user.username;
 
+// filtrering
+genderFilter.value = localStorage.getItem("filterGender") || "";
+ageInput.value = localStorage.getItem("filterAge") || "";
+
+// oppdatert brukernavn
 saveBtn.addEventListener("click", () => {
   const newUsername = editUsername.value.trim();
   if (!newUsername) return alert("Brukernavn kreves.");
@@ -36,21 +48,65 @@ saveBtn.addEventListener("click", () => {
     .catch(() => alert("Feil ved oppdatering."));
 });
 
-// tre tilfeldige brukere fra randomuser.me API
-fetch("https://randomuser.me/api/?results=3")
-  .then((res) => {
-    console.log("Random user API status:", res.status);
-    return res.json();
-  })
-  .then((data) => {
-    data.results.forEach((u) => {
-      userList.innerHTML += `
-        <div class="match">
-        <img src="${u.picture.medium}" alt="Profilbilde"/>
-        <p>${u.name.first} ${u.name.last}</p>
-        </div>`;
+// filtrering av brukere
+function showFilteredUsers() {
+  userList.innerHTML = "";
+
+  fetch("https://randomuser.me/api/?results=50")
+    .then((res) => {
+      console.log("Random user API status:", res.status);
+      return res.json();
+    })
+    .then(({ results }) => {
+      const gender = genderFilter.value;
+      const age = parseInt(ageInput.value);
+
+      const matches = results
+        .filter(
+          (u) => (!gender || u.gender === gender) && (!age || u.dob.age === age)
+        )
+        .slice(0, 3);
+
+      userList.innerHTML = matches.length
+        ? matches
+            .map(
+              (u) => `
+            <div class="match">
+            <img src="${u.picture.medium}" alt="Profilbilde"/>
+            <p>${u.name.first} ${u.name.last}, ${u.dob.age} yrs</p>
+            </div>`
+            )
+            .join("")
+        : "<p>No matches found.</p>";
+    })
+    .catch((err) => {
+      console.log("Error fetching random users:", err);
     });
-  })
-  .catch((err) => {
-    console.log("Error fetching random users:", err);
-  });
+}
+
+applyFilterBtn.addEventListener("click", () => {
+  localStorage.setItem("filterGender", genderFilter.value);
+  localStorage.setItem("filterAge", ageInput.value);
+  showFilteredUsers();
+});
+
+showFilteredUsers();
+
+// tre tilfeldige brukere fra randomuser.me API
+// fetch("https://randomuser.me/api/?results=3")
+//   .then((res) => {
+//     console.log("Random user API status:", res.status);
+//     return res.json();
+//   })
+//   .then((data) => {
+//     data.results.forEach((u) => {
+//       userList.innerHTML += `
+//         <div class="match">
+//         <img src="${u.picture.medium}" alt="Profilbilde"/>
+//         <p>${u.name.first} ${u.name.last}</p>
+//         </div>`;
+//     });
+//   })
+//   .catch((err) => {
+//     console.log("Error fetching random users:", err);
+//   });
