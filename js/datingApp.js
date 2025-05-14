@@ -1,27 +1,30 @@
 const apiUrl =
-  "https://crudcrud.com/api/59bd4a25395f4afca8a59d97f014ccb6/users";
+  "https://crudcrud.com/api/05c12c20edc54cff8a3e0db806e7a9f6/users";
 
 const user = JSON.parse(localStorage.getItem("currentUser"));
 if (!user || !user._id) {
   window.location.href = "login.html";
 }
 
-// Visning og redigering av brukerprofil
+// Brukerprofil (profilvisning og redigering)
 const profileUsername = document.getElementById("profileUsername");
 const editUsername = document.getElementById("editUserName");
 const saveBtn = document.getElementById("saveChangesBtn");
-const userList = document.getElementById("randomUsersContainer");
 
-// Filtrering
+// Filtrering av brukere
 const genderFilter = document.getElementById("genderFilter");
 const ageInput = document.getElementById("ageInput");
 const applyFilterBtn = document.getElementById("applyFilterBtn");
 
-// brukernavn
+// Matchforslag og en-om gangen visning
+const userList = document.getElementById("randomUsersContainer");
+const matchContainer = document.getElementById("singleUserContainer");
+const likeBtn = document.getElementById("likeBtn");
+const skipBtn = document.getElementById("skipBtn");
+
+// fyll inn eksisterende data
 profileUsername.textContent = user.username;
 editUsername.value = user.username;
-
-// filtrering
 genderFilter.value = localStorage.getItem("filterGender") || "";
 ageInput.value = localStorage.getItem("filterAge") || "";
 
@@ -84,29 +87,67 @@ function showFilteredUsers() {
     });
 }
 
+let filteredUsers = [];
+currentUser = 0;
+
+function loadFilteredMatches() {
+  fetch("https://randomuser.me/api/?results=30")
+    .then((res) => {
+      console.log("Random user API status:", res.status);
+      return res.json();
+    })
+    .then(({ results }) => {
+      const gender = genderFilter.value;
+      const age = parseInt(ageInput.value);
+
+      filteredUsers = results.filter(
+        (u) => (!gender || u.gender === gender) && (!age || u.dob.age === age)
+      );
+
+      currentUser = 0;
+      showSingleUser();
+    })
+    .catch((err) => console.log("Error fetching filtered matches:", err));
+}
+
+function showSingleUser() {
+  const u = filteredUsers[currentUser];
+  if (!u) {
+    matchContainer.innerHTML = "<p>No more matches.</p>";
+    return;
+  }
+
+  matchContainer.innerHTML = `
+    <img src="${u.picture.medium}" alt="Profilbilde"/>
+    <p>${u.name.first} ${u.name.last}, ${u.dob.age} yrs</p>
+    <p>${u.location.city}, ${u.location.country}</p>
+    `;
+}
+
+// Like og skip
+likeBtn.addEventListener("click", () => {
+  const likedUser = filteredUsers[currentUser];
+  if (likedUser) {
+    fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...likedUser, likedBy: user.username }),
+    });
+  }
+  currentUser++;
+  showSingleUser();
+});
+
+skipBtn.addEventListener("click", () => {
+  currentUser++;
+  showSingleUser();
+});
+
 applyFilterBtn.addEventListener("click", () => {
   localStorage.setItem("filterGender", genderFilter.value);
   localStorage.setItem("filterAge", ageInput.value);
   showFilteredUsers();
+  loadFilteredMatches();
 });
 
 showFilteredUsers();
-
-// tre tilfeldige brukere fra randomuser.me API
-// fetch("https://randomuser.me/api/?results=3")
-//   .then((res) => {
-//     console.log("Random user API status:", res.status);
-//     return res.json();
-//   })
-//   .then((data) => {
-//     data.results.forEach((u) => {
-//       userList.innerHTML += `
-//         <div class="match">
-//         <img src="${u.picture.medium}" alt="Profilbilde"/>
-//         <p>${u.name.first} ${u.name.last}</p>
-//         </div>`;
-//     });
-//   })
-//   .catch((err) => {
-//     console.log("Error fetching random users:", err);
-//   });
