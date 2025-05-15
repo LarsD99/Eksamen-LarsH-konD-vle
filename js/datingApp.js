@@ -1,5 +1,5 @@
 const apiUrl =
-  "https://crudcrud.com/api/05c12c20edc54cff8a3e0db806e7a9f6/users";
+  "https://crudcrud.com/api/ddc6bef7d86949ab891f507545c1844b/users";
 
 const user = JSON.parse(localStorage.getItem("currentUser"));
 if (!user || !user._id) {
@@ -21,6 +21,9 @@ const userList = document.getElementById("randomUsersContainer");
 const matchContainer = document.getElementById("singleUserContainer");
 const likeBtn = document.getElementById("likeBtn");
 const skipBtn = document.getElementById("skipBtn");
+
+// likte brukere
+const likedUsersContainer = document.getElementById("likedUsersContainer");
 
 // fyll inn eksisterende data
 profileUsername.textContent = user.username;
@@ -124,6 +127,48 @@ function showSingleUser() {
     `;
 }
 
+// last inn likte brukere
+function loadLikedUsers() {
+  fetch(apiUrl)
+    .then((res) => res.json())
+    .then((users) => {
+      const liked = users.filter(
+        (u) => u.likedBy && u.likedBy === user.username
+      );
+      likedUsersContainer.innerHTML = "";
+
+      if (!liked.length) {
+        likedUsersContainer.innerHTML = "<p>No liked users.</p>";
+        return;
+      }
+
+      liked.forEach((u) => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+            <img src="${u.picture.medium || ""}" alt="Profilbilde"/>
+            <p>${u.name.first || ""} ${u.name.last || ""}, ${
+          u.dob.age || ""
+        } yrs</p>
+            <button>Delete</button>
+            `;
+
+        div.querySelector("button").addEventListener("click", () => {
+          deleteLikedUser(u._id);
+        });
+
+        likedUsersContainer.appendChild(div);
+      });
+    })
+    .catch((err) => console.log("Error loading liked users:", err));
+}
+
+// slett brukere som er likt
+function deleteLikedUser(id) {
+  fetch(`${apiUrl}/${id}`, { method: "DELETE" })
+    .then(() => loadLikedUsers())
+    .catch((err) => console.log("Error deleting liked user:", err));
+}
+
 // Like og skip
 likeBtn.addEventListener("click", () => {
   const likedUser = filteredUsers[currentUser];
@@ -131,11 +176,23 @@ likeBtn.addEventListener("click", () => {
     fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...likedUser, likedBy: user.username }),
-    });
+      body: JSON.stringify({
+        likedBy: user.username,
+        name: likedUser.name,
+        dob: likedUser.dob,
+        location: likedUser.location,
+        picture: likedUser.picture,
+      }),
+    })
+      .then(() => {
+        currentUser++;
+        showSingleUser();
+        loadLikedUsers();
+      })
+      .catch((err) => {
+        console.log("Error liking user:", err);
+      });
   }
-  currentUser++;
-  showSingleUser();
 });
 
 skipBtn.addEventListener("click", () => {
@@ -151,3 +208,4 @@ applyFilterBtn.addEventListener("click", () => {
 });
 
 showFilteredUsers();
+loadLikedUsers();
