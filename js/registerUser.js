@@ -1,5 +1,5 @@
 const apiUrl =
-  "https://crudcrud.com/api/0f32d409b6b94850a59a7b2d4bd83f17/users";
+  "https://crudcrud.com/api/9007425c8dbb44f196b93bcacb917c04/users";
 
 // funsjon registrere bruker
 document
