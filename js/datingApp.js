@@ -1,5 +1,5 @@
 const apiUrl =
-  "https://crudcrud.com/api/ddc6bef7d86949ab891f507545c1844b/users";
+  "https://crudcrud.com/api/0f32d409b6b94850a59a7b2d4bd83f17/users";
 
 const user = JSON.parse(localStorage.getItem("currentUser"));
 if (!user || !user._id) {
@@ -21,6 +21,9 @@ const userList = document.getElementById("randomUsersContainer");
 const matchContainer = document.getElementById("singleUserContainer");
 const likeBtn = document.getElementById("likeBtn");
 const skipBtn = document.getElementById("skipBtn");
+
+// Tillegsfunksjon: av superlike ny knapp legges til
+const superlikeBtn = document.getElementById("superlikeBtn");
 
 // likte brukere
 const likedUsersContainer = document.getElementById("likedUsersContainer");
@@ -162,11 +165,55 @@ function loadLikedUsers() {
     .catch((err) => console.log("Error loading liked users:", err));
 }
 
+// Tillegsfunksjon: last inn superlike
+function loadSuperlikedUsers() {
+  fetch(apiUrl)
+    .then((res) => res.json())
+    .then((users) => {
+      const container = document.getElementById("superlikedUsersContainer");
+      const superliked = users.filter(
+        (u) => u.superlikedBy && u.superlikedBy === user.username
+      );
+
+      container.innerHTML = "";
+
+      if (!superliked.length) {
+        container.innerHTML = "<p>No superliked users.</p>";
+        return;
+      }
+
+      superliked.forEach((u) => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <img src="${u.picture.medium || ""}" alt="Profilbilde"/>
+          <p>${u.name.first || ""} ${u.name.last || ""}, ${
+          u.dob.age || ""
+        } yrs</p>
+          <button>Delete</button>
+        `;
+
+        div.querySelector("button").addEventListener("click", () => {
+          deleteSuperlikedUser(u._id);
+        });
+
+        container.appendChild(div);
+      });
+    })
+    .catch((err) => console.log("Error loading superliked users:", err));
+}
+
 // slett brukere som er likt
 function deleteLikedUser(id) {
   fetch(`${apiUrl}/${id}`, { method: "DELETE" })
     .then(() => loadLikedUsers())
     .catch((err) => console.log("Error deleting liked user:", err));
+}
+
+// Tillegsfunksjon: slett superlike
+function deleteSuperlikedUser(id) {
+  fetch(`${apiUrl}/${id}`, { method: "DELETE" })
+    .then(() => loadSuperlikedUsers())
+    .catch((err) => console.log("Error deleting superliked user:", err));
 }
 
 // Like og skip
@@ -186,8 +233,14 @@ likeBtn.addEventListener("click", () => {
     })
       .then(() => {
         currentUser++;
-        showSingleUser();
         loadLikedUsers();
+        loadSuperlikedUsers(); //oppdatering med superlike
+
+        localStorage.setItem(
+          "matchState",
+          JSON.stringify({ users: filteredUsers, index: currentUser })
+        );
+        showSingleUser();
       })
       .catch((err) => {
         console.log("Error liking user:", err);
@@ -197,7 +250,44 @@ likeBtn.addEventListener("click", () => {
 
 skipBtn.addEventListener("click", () => {
   currentUser++;
+
+  localStorage.setItem(
+    "matchState",
+    JSON.stringify({ users: filteredUsers, index: currentUser })
+  );
   showSingleUser();
+});
+
+// tillegsfunksjonalitet superlike
+superlikeBtn.addEventListener("click", () => {
+  const u = filteredUsers[currentUser];
+  if (!u) return;
+
+  fetch(apiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      superlikedBy: user.username,
+      name: u.name,
+      dob: u.dob,
+      location: u.location,
+      picture: u.picture,
+      superliked: true,
+    }),
+  })
+    .then(() => {
+      currentUser++;
+      loadLikedUsers();
+      localStorage.setItem(
+        "matchState",
+        JSON.stringify({
+          users: filteredUsers,
+          index: currentUser,
+        })
+      );
+      showSingleUser();
+    })
+    .catch((err) => console.log("Error superliking user:", err));
 });
 
 applyFilterBtn.addEventListener("click", () => {
@@ -207,5 +297,17 @@ applyFilterBtn.addEventListener("click", () => {
   loadFilteredMatches();
 });
 
+const saved = JSON.parse(localStorage.getItem("matchState"));
+if (saved?.users && saved.index !== undefined) {
+  filteredUsers = saved.users;
+  currentUser = saved.index;
+  showSingleUser();
+} else {
+  loadFilteredMatches();
+}
+
 showFilteredUsers();
 loadLikedUsers();
+
+// Tillegsfunksjon: superlike
+loadSuperlikedUsers();
